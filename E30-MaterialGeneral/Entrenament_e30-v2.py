@@ -193,13 +193,13 @@ def train_in_chunks(
 
 
 def main():
-    XLSX          = r"C:/Users/ariad/Desktop/Millora de l'entrenament/Cataleg_m144.xlsx"
+    XLSX          = r"C:/Users/ariad/Documents/GitHub/CatalegML/Cataleg_m144.xlsx"
     
     validated_path       = "entreno_Sonia"
     classif_cleaned_path = "classif_E30"
 
-    model_folder         =  r"C:/Users/ariad/Desktop/Millora de l'entrenament/fine_tuned_model_E30_e2sj2"
-    output_trained_model =  r"C:/Users/ariad/Desktop/Millora de l'entrenament/fine_tuned_model_E30_e2sj"
+    model_folder         =  r"C:/Users/ariad/Documents/GitHub/CatalegML/fine_tuned_model_E30_e2sj2"
+    output_trained_model =  r"C:/Users/ariad/Documents/GitHub/CatalegML/fine_tuned_model_E30_e2sj"
     checkpoint_dir       = "checkpoints_E30_3"
 
     # 1) Crear tots els exemples

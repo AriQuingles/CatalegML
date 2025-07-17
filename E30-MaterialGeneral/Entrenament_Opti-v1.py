@@ -15,12 +15,12 @@ from sentence_transformers import SentenceTransformer, InputExample, losses
 from torch.utils.data import DataLoader
 
 # ─── CONFIG ─────────────────────────────────────────────
-XLSX          = r"C:/Users/ariad/Desktop/Millora de l'entrenament/Cataleg_m144.xlsx"
+XLSX          = r"C:/Users/ariad/Documents/GitHub/CatalegML/E30-MaterialGeneral/Cataleg_m144.xlsx"
 SHEET_VAL     = "entreno"
 SHEET_CLS     = "classif_E30"
 
 BASE_MODEL    = "sentence-transformers/all-MiniLM-L6-v2"
-OUT_DIR       = r"C:/Users/ariad/Desktop/Millora de l'entrenament/model_turbo_m144"
+OUT_DIR       = r"C:/Users/ariad/Documents/GitHub/CatalegML/E30-MaterialGeneral/model_turbo_m144"
 
 FREEZE_N_LAYERS = 5     # congela les 5 primeres capes
 BATCH_SIZE_GPU  = 512

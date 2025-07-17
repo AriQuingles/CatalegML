@@ -190,8 +190,8 @@ def main():
     classif_cleaned_path = r"C:/Users/ariad/Documents/GitHub/CatalegML/COT-antic/Classif_cleaned.xlsx" 
 
     model_folder         = r"C:/Users/ariad/Documents/GitHub/CatalegML/COT-antic/fine_tuned_model_150_epoca3"
-    output_trained_model = r"C:/Users/ariad/Documents/GitHub/CatalegML/COT-antic/fine_tuned_model_150_epoca4"
-    checkpoint_dir       = "checkpoints_150_epoca4"
+    output_trained_model = r"C:/Users/ariad/Documents/GitHub/CatalegML/COT-antic/fine_tuned_model_150_epoca5"
+    checkpoint_dir       = "checkpoints_150_epoca5"
 
     # 1) Crear tots els exemples
     training_examples = load_and_prepare_data_all_descripcions(validated_path, classif_cleaned_path)
