@@ -1,113 +1,107 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Mar 17 12:44:27 2025
-
-@author: ariad
+Adaptat per usar paths relatius i cross-platform amb pathlib.
+Amb informació detallada de cada pas.
 """
+from pathlib import Path
 import pandas as pd
 import torch
 from sentence_transformers import SentenceTransformer, util
 
+# ────────────────────────────────────────────────────────────────────────────────
+# Configuració de rutes – relatives al directori del script
+# ────────────────────────────────────────────────────────────────────────────────
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR
+
+MOSTRA_FILE   = DATA_DIR / "Mostra_cleaned.xlsx"
+CLASSIF_FILE  = DATA_DIR / "Classif_cleaned.xlsx"
+MODEL_DIR     = DATA_DIR / "fine_tuned_model_150_epoca3"
+OUTPUT_FILE   = DATA_DIR / "evaluation_results150_epocaA.xlsx"
+
+# ────────────────────────────────────────────────────────────────────────────────
 def evaluate_mostra_model(
-    mostra_clean_path=r"C:/Users/ariad/Desktop/Cataleg_Arxius_prova/Mostra_cleaned.xlsx",
-    classif_cleaned_path=r"C:/Users/ariad/Desktop/Cataleg_Arxius_prova/Classif_cleaned.xlsx",
-    model_path=r"C:/Users/ariad/Desktop/Cataleg_Arxius_prova/fine_tuned_model_150_epoca3",
-    output_excel_path=r"C:/Users/ariad/Desktop/Cataleg_Arxius_prova/evaluation_results150_epoca3.xlsx",
-    base_model_name="sentence-transformers/distiluse-base-multilingual-cased-v1"
-):
+    mostra_clean_path: Path = MOSTRA_FILE,
+    classif_cleaned_path: Path = CLASSIF_FILE,
+    model_path: Path = MODEL_DIR,
+    output_excel_path: Path = OUTPUT_FILE,
+    base_model_name: str = "sentence-transformers/distiluse-base-multilingual-cased-v1",
+) -> None:
     """
-    1) Carrega el model existent desat a 'model_path'.
-    2) Llegeix la mostra netejada (Mostra_clean.xlsx) amb 4 columnes: 
-       [Codi_HSPAU, Descripcio_HSPAU, Codi_Classif, ICS_Grup_article].
-    3) Llegeix Classif_cleaned.xlsx (3 columnes: [Codi_Classif, Grup_Articles, Descripcio_Classif]).
-    4) Per cada fila de mostra, calcula la millor coincidència a Classif via cosinus. 
-       Afegeix 'Codi_Classif_Pred', 'ICS_Grup_article_Pred' i 'Similitud' al DataFrame.
-    5) Desa un nou Excel amb aquesta informació. 
-    6) Opcional: Afegeix una columna 'Encert' si coincideix amb el codi ICS real.
+    Avaluació d'un model fine-tuned sobre una mostra i classificació.
     """
 
-    # 1) Carregar model
+    print("\n────── Ruta d'execució ──────")
+    print(f"Script executat des de: {Path.cwd()}")
+    print(f"Ruta absoluta de l'script (__file__): {BASE_DIR}")
+    print(f"Fitxer mostra: {mostra_clean_path}")
+    print(f"Fitxer classificació: {classif_cleaned_path}")
+    print(f"Directori model: {model_path}")
+    print(f"Fitxer de sortida: {output_excel_path}")
+    print("──────────────────────────────\n")
+
+    if not model_path.exists():
+        raise FileNotFoundError(f"El directori del model no existeix: {model_path}")
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Carregant el model des de: {model_path}")
-    model = SentenceTransformer(model_path, device=device)
+    model = SentenceTransformer(str(model_path), device=device)
 
-    # 2) Llegeix la mostra netejada
     df_mostra = pd.read_excel(mostra_clean_path)
-    # Columns: [Codi_HSPAU, Descripcio_HSPAU, Codi_Classif, ICS_Grup_article]
-
-    # 3) Llegeix Classif_cleaned
     df_classif = pd.read_excel(classif_cleaned_path)
-    # Assegurem que té [Codi_Classif, Grup_Articles, Descripcio_Classif]
     df_classif.columns = ["Codi_Classif", "Grup_Articles", "Descripcio_Classif"]
 
-    # Genera embeddings de TOT Classif un cop
-    classif_embeddings = model.encode(df_classif["Descripcio_Classif"].tolist(), convert_to_tensor=True)
+    classif_embeddings = model.encode(
+        df_classif["Descripcio_Classif"].tolist(), convert_to_tensor=True
+    )
 
-    # Llistes per als resultats
-    codi_classif_pred_list = []
-    grup_article_pred_list = []
-    descripcio_pred_list   = []
-    sim_list               = []
-    encert_list            = []  # Si vols marcar si coincideix
+    codi_classif_pred_list, grup_article_pred_list = [], []
+    descripcio_pred_list, sim_list, encert_list = [], [], []
 
     for idx, row in df_mostra.iterrows():
-        codi_hpau    = row["Codi_HSPAU"]
-        desc_hpau    = str(row["Descripcio_HSPAU"])
+        desc_hpau = str(row["Descripcio_HSPAU"])
         codi_classif_real = str(row["Codi_Classif"])
 
-        # Embedding de la descripció HSPAU
         emb_hpau = model.encode(desc_hpau, convert_to_tensor=True)
-
-        # Similitud amb tots els embeddings de Classif
         sims = util.cos_sim(emb_hpau, classif_embeddings)[0]
         max_sim_val, max_idx = torch.max(sims, dim=0)
-        max_idx = int(max_idx.item())
+        best_row = df_classif.iloc[int(max_idx)]
 
-        # Recuperar la fila de Classif amb la millor similitud
-        best_row = df_classif.iloc[max_idx]
         codi_classif_pred = best_row["Codi_Classif"]
-        grup_art_pred     = best_row["Grup_Articles"]
+        grup_article_pred = best_row["Grup_Articles"]
         desc_classif_pred = best_row["Descripcio_Classif"]
-        sim_score         = float(max_sim_val.item())
+        sim_score = float(max_sim_val)
 
         codi_classif_pred_list.append(codi_classif_pred)
-        grup_article_pred_list.append(grup_art_pred)
+        grup_article_pred_list.append(grup_article_pred)
         descripcio_pred_list.append(desc_classif_pred)
         sim_list.append(sim_score)
+        encert_list.append(codi_classif_pred == codi_classif_real)
 
-        # Opcional: Verificar si coincideix amb el codi ICS real
-        encert = (codi_classif_pred == codi_classif_real)
-        encert_list.append(encert)
+        # 🟨 Informació detallada per cada fila
+        print(f"[{idx+1}] Descripció: {desc_hpau}")
+        print(f"    → Codi real: {codi_classif_real}")
+        print(f"    → Predicció: {codi_classif_pred} ({grup_article_pred})")
+        print(f"    → Descripció pred: {desc_classif_pred}")
+        print(f"    → Similitud: {sim_score:.4f}")
+        print(f"    → Encert: {'✅' if codi_classif_pred == codi_classif_real else '❌'}\n")
 
-    # Afegir aquestes columnes al df_mostra
     df_mostra["Codi_Classif_Pred"] = codi_classif_pred_list
     df_mostra["ICS_Grup_article_Pred"] = grup_article_pred_list
     df_mostra["Descripcio_Classif_Pred"] = descripcio_pred_list
     df_mostra["Similitud"] = sim_list
-    df_mostra["Encert"] = encert_list  # True/False
+    df_mostra["Encert"] = encert_list
 
-    # Desa un nou Excel amb resultats
     df_mostra.to_excel(output_excel_path, index=False)
-    print(f"Resultats desats a: {output_excel_path}")
-    print(f"Total files processades: {len(df_mostra)}")
-    # Si vols veure l'accuracy global:
+    print(f"📁 Resultats desats a: {output_excel_path}")
+
     accuracy = sum(encert_list) / len(encert_list) * 100
-    print(f"Accuracy aproximada: {accuracy:.2f}%")
+    print(f"\n✅ Accuracy aproximada: {accuracy:.2f}%")
+    print(f"🎯 {sum(encert_list)} encerts de {len(encert_list)} mostres totals.")
 
-def main():
-    mostra_clean_path    = r"C:/Users/ariad/Desktop/Cataleg_Arxius_prova/Mostra_cleaned.xlsx"
-    classif_cleaned_path = r"C:/Users/ariad/Desktop/Cataleg_Arxius_prova/Classif_cleaned.xlsx"
-    model_path           = r"C:/Users/ariad/Desktop/Cataleg_Arxius_prova/fine_tuned_model_150_epoca3"
-    output_excel_path    = r"C:/Users/ariad/Desktop/Cataleg_Arxius_prova/evaluation_results150_epoca3.xlsx"
-
-    evaluate_mostra_model(
-        mostra_clean_path=mostra_clean_path,
-        classif_cleaned_path=classif_cleaned_path,
-        model_path=model_path,
-        output_excel_path=output_excel_path,
-        base_model_name="sentence-transformers/distiluse-base-multilingual-cased-v1"
-    )
+# ────────────────────────────────────────────────────────────────────────────────
+def main() -> None:
+    evaluate_mostra_model()
 
 if __name__ == "__main__":
     main()
-
