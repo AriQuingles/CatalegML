@@ -1,2 +1,7 @@
 COT-antic/fine_tuned_model_150_epoca3/model.safetensors
 E30-MaterialGeneral/initial_model/model.safetensors
+E30-MaterialGeneral/model_turbo_m144/model.safetensors
+E30-MaterialGeneral/model_turbo_m144/README.md
+COT-antic/fine_tuned_model_150_epoca3/config_sentence_transformers.json
+E20-ImplantsQuirurgicsTera/COT-antic/fine_tuned_model_150_epoca3/2_Dense/model.safetensors
+E20-ImplantsQuirurgicsTera/COT-antic/fine_tuned_model_150_epoca3/model.safetensors
